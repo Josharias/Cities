@@ -86,21 +86,23 @@ class CachingLerpHeightMap extends HeightMapAdapter {
 
             int minZ = TeraMath.floorToInt(lz);
             int maxZ = minZ + 1;
+            
+            return getHeight(minX, minZ);
 
-            int q00 = getHeight(minX, minZ);
-            int q10 = getHeight(maxX, minZ);
-            int q01 = getHeight(minX, maxZ);
-            int q11 = getHeight(maxX, maxZ);
-
-            double ipx = lx - minX;
-            double ipz = lz - minZ;
-
-            double min = TeraMath.lerp(q00, q10, ipx);
-            double max = TeraMath.lerp(q01, q11, ipx);
-
-            double res = TeraMath.lerp(min, max, ipz);
-
-            return TeraMath.floorToInt(res + 0.49);
+//            int q00 = getHeight(minX, minZ);
+//            int q10 = getHeight(maxX, minZ);
+//            int q01 = getHeight(minX, maxZ);
+//            int q11 = getHeight(maxX, maxZ);
+//
+//            double ipx = lx - minX;
+//            double ipz = lz - minZ;
+//
+//            double min = TeraMath.lerp(q00, q10, ipx);
+//            double max = TeraMath.lerp(q01, q11, ipx);
+//
+//            double res = TeraMath.lerp(min, max, ipz);
+//
+//            return TeraMath.floorToInt(res + 0.49);
         }
         
         logger.debug("Accessing height map outside cached bounds -- referring to uncached height map");

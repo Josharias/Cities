@@ -39,15 +39,7 @@ public class ContourTracer {
     private static final byte FOREGROUND = 1;
     private static final byte BACKGROUND = 0;
 
-    private List<Contour> outerContours;
-    private List<Contour> innerContours;
-
-
-    // label values in labelArray can be:
-    // 0 ... unlabeled
-    // -1 ... previously visited background pixel
-    // >0 ... valid label
-    private IntArray2D labelArray;
+    private List<Contour> contours;
 
     private final HeightMap dataMap;
     private final int width;
@@ -67,10 +59,6 @@ public class ContourTracer {
         this.offX = rc.x;
         this.offY = rc.y;
         
-        labelArray = Arrays2D.create(width, height, 0, (byte) 0);
-        labelArray = Arrays2D.ignoreOutOfBounds(labelArray, (byte) 0);
-        labelArray = Arrays2D.translate(labelArray, -rc.x, -rc.y);
-        
         this.dataMap = new HeightMapAdapter() {
 
             @Override
@@ -86,43 +74,21 @@ public class ContourTracer {
     }
 
     /**
-     * @return a list of outer contours
+     * @return a list of contours
      */
-    public List<Contour> getOuterContours() {
-        if (outerContours == null) {
-            outerContours = new ArrayList<>();
-            innerContours = new ArrayList<>();
+    public List<Contour> getContours() {
+        if (contours == null) {
+            contours = new ArrayList<>();
             findAllContours();
         }
         
-        return outerContours;
-    }
-
-    /**
-     * @return a list of inner contours (islands)
-     */
-    public List<Contour> getInnerContours() {
-        if (innerContours == null) {
-            outerContours = new ArrayList<>();
-            innerContours = new ArrayList<>();
-            findAllContours();
-        }
-        
-        return innerContours;
-    }
-
-    private Contour traceOuterContour(int cx, int cy, int label) {
-        return traceContour(cx, cy, label, 0);
-    }
-
-    private Contour traceInnerContour(int cx, int cy, int label) {
-        return traceContour(cx, cy, label, 1);
+        return contours;
     }
 
     // Trace one contour starting at (xS,yS)
     // in direction dS with label label
     // trace one contour starting at (xS,yS) in direction dS
-    private Contour traceContour(int xS, int yS, int label, int dS) {
+    private Contour traceContour(int xS, int yS, int dS) {
         Contour cont = new Contour();
 
         int xT; // T = successor of starting point (xS,yS)
@@ -148,7 +114,6 @@ public class ContourTracer {
         boolean done = (xS == xT && yS == yT); // true if isolated pixel
 
         while (!done) {
-            labelArray.set(xC, yC, label);
             pt = new Point(xC, yC);
             int dSearch = (dNext + 6) % 8;
             dNext = findNextPoint(pt, dSearch);
@@ -160,6 +125,10 @@ public class ContourTracer {
             done = (xP == xS && yP == yS && xC == xT && yC == yT);
             if (!done) {
                 cont.addPoint(pt);
+                if (cont.getPoints().size() > 200) {
+                    done = true;
+                    System.out.println("ABORTING");
+                }
             }
         }
         return cont;
@@ -182,7 +151,6 @@ public class ContourTracer {
             int x = pt.x + delta[dir][0];
             int y = pt.y + delta[dir][1];
             if (dataMap.apply(x, y) == BACKGROUND) {
-                labelArray.set(x, y, -1); // mark surrounding background pixels
                 dir = (dir + 1) % 8;
             } else { // found non-background pixel
                 pt.x = x;
@@ -203,38 +171,37 @@ public class ContourTracer {
     }
 
     private void findAllContours() {
-        int label = 0; // current label
-        int maxLabel = 0;
         
         // scan top to bottom, left to right
-        for (int v = offY; v < offY + height; v++) {
-            label = 0; // no label
-            for (int u = offX; u < offX + width; u++) {
+        for (int y = offY; y < offY + height; y++) {
+            for (int x = offX; x < offX + width; x++) {
 
-                if (dataMap.apply(u, v) == FOREGROUND) {
-                    if (label != 0) { // keep using same label
-                        labelArray.set(u, v, label);
-                    } else if (!isInside(u, v)) {
-                        label = labelArray.get(u, v);
-                        if (label == 0) { // unlabeled - new outer contour
-                            maxLabel++;
-                            label = maxLabel;
-                            Contour oc = traceOuterContour(u, v, label);
-                            outerContours.add(oc);
-                            labelArray.set(u, v, label);
-                        }
+                Point pt = new Point(x, y);
+
+                if (dataMap.apply(x, y) == FOREGROUND) {
+                    if (!alreadyFound(pt) && !isInside(x, y)) {
+                        System.out.println("CONTOUR " + x + " / " + y);
+                        Contour oc = traceContour(x, y, 0);
+                        contours.add(oc);
                     }
-                } else {            // BACKGROUND pixel
-                    if (label != 0) {
-                        if (labelArray.get(u, v) == 0) { // unlabeled - new inner
-                                                     // contour
-                            Contour ic = traceInnerContour(u - 1, v, label);
-                            innerContours.add(ic);
-                        }
-                        label = 0;
+
+                } else { // BACKGROUND pixel
+                    if (x > offX && dataMap.apply(x - 1, y) == FOREGROUND && !alreadyFound(new Point(x - 1, y))) {
+                        Contour ic = traceContour(x - 1, y, 0);
+                        contours.add(ic);
                     }
                 }
             }
         }
+    }
+
+    private boolean alreadyFound(Point pt) {
+        for (Contour c : contours) {
+            if (c.getPoints().contains(pt)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

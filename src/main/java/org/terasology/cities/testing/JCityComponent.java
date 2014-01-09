@@ -46,7 +46,7 @@ final class JCityComponent extends JComponent {
     
     final BufferedImage image = new BufferedImage(4 * 256, 3 * 256, BufferedImage.TYPE_INT_ARGB);
 
-    final Vector2i cameraPos = new Vector2i(-350, 450);
+    final Vector2i cameraPos = new Vector2i(50, 50);
 
     private JLabel label;
 
@@ -121,7 +121,7 @@ final class JCityComponent extends JComponent {
         g.setColor(Color.LIGHT_GRAY);
         g.fillRect(0, 0, imgWidth, imgHeight);
 
-        int scale = 2;
+        int scale = 1;
              
         try {
             g.setColor(Color.BLACK);
@@ -142,7 +142,7 @@ final class JCityComponent extends JComponent {
                 for (int x = -1; x < numX; x++) {
                     Point2i coord = new Point2i(x - camOffX, z - camOffZ);
                     Sector sector = Sectors.getSector(coord);
-                    g.setClip((x - camOffX) * Sector.SIZE, (z - camOffZ) * Sector.SIZE, Sector.SIZE, Sector.SIZE);
+//                    g.setClip((x - camOffX) * Sector.SIZE, (z - camOffZ) * Sector.SIZE, Sector.SIZE, Sector.SIZE);
                     rasterizer.rasterizeSector(g, sector);
                 }
             }

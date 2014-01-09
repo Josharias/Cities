@@ -59,16 +59,16 @@ public final class SwingTest {
         frame.setLocation(screenWidth - frame.getWidth(), 40);
         
         // repaint every second to see changes while debugging
-        int updateInteval = 1000;
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-
-            @Override
-            public void run() {
-                frame.repaint();
-            }
-            
-        }, updateInteval, updateInteval);
+//        int updateInteval = 1000;
+//        Timer timer = new Timer();
+//        timer.schedule(new TimerTask() {
+//
+//            @Override
+//            public void run() {
+//                frame.repaint();
+//            }
+//            
+//        }, updateInteval, updateInteval);
         
         frame.setVisible(true);
     }

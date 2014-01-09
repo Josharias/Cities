@@ -55,10 +55,8 @@ public class ContourTracingTest {
         
         Rectangle rc = new Rectangle(0, 0, width, height);
         ContourTracer ct = new ContourTracer(HeightMaps.stringBased(data), rc, ' ');
-        List<Contour> all = Lists.newArrayList();
-        all.addAll(ct.getOuterContours());
-        all.addAll(ct.getInnerContours());
-        drawContour(all, width, height);
+        List<Contour> contours = ct.getContours();
+        drawContour(contours, width, height);
         
         List<String> desired = Arrays.asList(
             "-------------",
@@ -72,7 +70,7 @@ public class ContourTracingTest {
             "---XXX-------",
             "-------------");
         
-        List<String> reality = drawContour(all, width, height);
+        List<String> reality = drawContour(contours, width, height);
 
         for (int line = 0; line < height; line++) {
             assertEquals("Line " + line, desired.get(line), reality.get(line));

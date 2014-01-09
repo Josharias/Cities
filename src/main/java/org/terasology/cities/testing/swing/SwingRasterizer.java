@@ -21,15 +21,26 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.vecmath.Point2i;
+
+import org.newdawn.slick.geom.Ellipse;
 import org.terasology.cities.BlockTypes;
 import org.terasology.cities.CityWorldConfig;
 import org.terasology.cities.WorldFacade;
 import org.terasology.cities.common.Orientation;
+import org.terasology.cities.common.Profiler;
+import org.terasology.cities.contour.Contour;
+import org.terasology.cities.contour.ContourTracer;
 import org.terasology.cities.model.City;
 import org.terasology.cities.model.Lot;
 import org.terasology.cities.model.Sector;
@@ -40,6 +51,7 @@ import org.terasology.cities.raster.standard.RoadRasterizer;
 import org.terasology.cities.terrain.HeightMap;
 import org.terasology.cities.terrain.HeightMaps;
 import org.terasology.cities.terrain.NoiseHeightMap;
+import org.terasology.logic.console.ConsoleMessageEvent;
 import org.terasology.math.TeraMath;
 import org.terasology.world.chunks.ChunkConstants;
 
@@ -99,8 +111,46 @@ public class SwingRasterizer {
             drawAccurately(g, sector);
         }
         
+        drawLakes(g, sector);
+        
         drawFrame(g, sector);
         drawSectorText(g, sector);
+    }
+
+    private void drawLakes(Graphics2D g, Sector sector) {
+        
+        if (!sector.getCoords().equals(new Point2i(0, 0)))
+            return;
+
+        Profiler.start(sector + "contour");
+
+        int scale = 16;
+        int size = Sector.SIZE / scale;
+        HeightMap orgHm = HeightMaps.scalingArea(heightMap, scale);
+        Point2i coords = sector.getCoords();
+        
+        Rectangle sectorRect = new Rectangle(coords.x * size, coords.y * size, size, size);
+        ContourTracer ct = new ContourTracer(orgHm, sectorRect, new CityWorldConfig().getSeaLevel());
+        List<Contour> conts1 = ct.getContours();
+
+        System.out.println("CONTOURS: " + sector + Profiler.getAsStringAndStop(sector + "contour"));
+
+        g = (Graphics2D)g.create();
+        g.scale(scale, scale);
+        g.translate(0.5, 0.5);
+        g.setStroke(new BasicStroke(4f / scale));
+
+        for (Contour c : conts1) {
+            
+            Point pl = null;
+            for (Point p : c.getPoints()) {
+                pl = p;
+            }
+            g.draw(new Ellipse2D.Double(pl.x - 0.3, pl.y - 0.3, 0.6, 0.6));
+
+            Polygon poly = c.makePolygon();
+            g.draw(poly);
+        }
     }
 
     private void drawAccurately(Graphics2D g, Sector sector) {
@@ -134,12 +184,12 @@ public class SwingRasterizer {
                     BufferedImage image = new BufferedImage(chunkSizeX, chunkSizeZ, BufferedImage.TYPE_INT_ARGB);
                     Brush brush = new SwingBrush(wx, wz, image, colorFunc);
 
-                    HeightMap cachedHm = HeightMaps.caching(heightMap, brush.getAffectedArea(), 8);
+                    HeightMap cachedHm = HeightMaps.caching(heightMap, brush.getAffectedArea(), 16);
                     TerrainInfo ti = new TerrainInfo(cachedHm);
 
                     drawBackground(image, wx, wz, ti);
-                    drawCities(sector, ti, brush);
-                    drawRoads(sector, ti, brush);
+//                    drawCities(sector, ti, brush);
+//                    drawRoads(sector, ti, brush);
 
                     int ix = wx;
                     int iy = wz;
@@ -281,7 +331,7 @@ public class SwingRasterizer {
        int offX = Sector.SIZE * sector.getCoords().x;
        int offZ = Sector.SIZE * sector.getCoords().y;
 
-       g.setColor(Color.BLUE);
+       g.setColor(Color.BLACK);
        Font oldFont = g.getFont();
        g.setFont(oldFont.deriveFont(10f));
        g.drawString(sector.toString(), offX + 5, offZ + g.getFontMetrics().getAscent());
@@ -292,7 +342,7 @@ public class SwingRasterizer {
         int offX = Sector.SIZE * sector.getCoords().x;
         int offZ = Sector.SIZE * sector.getCoords().y;
 
-        g.setColor(Color.BLUE);
+        g.setColor(Color.BLACK);
         g.setStroke(new BasicStroke(0.0f));
         g.drawRect(offX, offZ, Sector.SIZE, Sector.SIZE);
         g.setStroke(new BasicStroke());
