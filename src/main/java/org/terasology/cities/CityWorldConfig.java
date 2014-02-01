@@ -54,6 +54,10 @@ public class CityWorldConfig {
     public int getMinCitiesPerSector() {
         return minCitiesPerSector;
     }
+    
+    public void setMinCitiesPerSector(int minCitiesPerSector) {
+        this.minCitiesPerSector = minCitiesPerSector;
+    }
 
     /**
      * @return the maximum number of settlements per sector
