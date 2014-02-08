@@ -17,6 +17,8 @@
 package org.terasology.cities;
 
 import org.terasology.entitySystem.Component;
+import org.terasology.rendering.nui.properties.Range;
+import org.terasology.rendering.nui.properties.TextField;
 
 /**
  * TODO Type description
@@ -24,8 +26,17 @@ import org.terasology.entitySystem.Component;
  */
 public class CityConfigComponent implements Component {
 
+    @TextField
     public String config;
     
-    public int intConfig;
-    
+    @Range(min = 1, max = 5, increment = 1, precision = 1)
+    public int minCitiesPerSector = 1;
+    @Range(min = 1, max = 5, increment = 1, precision = 1)
+    private int maxCitiesPerSector = 2;
+
+    @Range(min = 10, max = 150, increment = 10, precision = 1)
+    private int minRadius = 50;
+
+    @Range(min = 100, max = 350, increment = 10, precision = 1)
+    private int maxRadius = 250;    
 }
